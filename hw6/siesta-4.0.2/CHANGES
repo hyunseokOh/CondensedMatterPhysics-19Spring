@@ -1,0 +1,761 @@
+##############################################
+ Changes between v4.0.1 and v4.0.2
+##############################################
+
+------------------------------------------------------------
+revno: 582
+tags: v4.0.2
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Wed 2018-07-04 21:26:29 +0200
+message:
+  Fixed madelung term for variable cell calculations
+  
+  This fix only applies to Gamma-point calculations
+  for SC/FCC/BCC systems.
+------------------------------------------------------------
+revno: 581
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Thu 2018-06-28 11:41:03 +0200
+message:
+  Fixed error in unit specification in ofc (only a comment)
+------------------------------------------------------------
+revno: 580
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Fri 2018-06-15 22:21:25 +0200
+message:
+  Updated all Transiesta+TBtrans tests for 4.0
+  
+  Since this 4.0 update implements new tabulated values
+  a lot of the tests changed values.
+  
+  This commit only deals with TranSiesta+TBtrans tests.
+------------------------------------------------------------
+revno: 579
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Wed 2018-06-13 21:25:31 +0200
+message:
+  Reran all tests for 4.0
+  
+  Since this 4.0 update implements new tabulated values
+  a lot of the tests changed values. I have gone through
+  all OUT.diffs and asserted that the values are agreeing
+  while they are not equal.
+  
+  Secondly, many of the tests with HarrisFunctional have been
+  changed to use regular diagon to make them more predictable
+  and stable tests.
+  
+  This commit only deals with Siesta tests.
+------------------------------------------------------------
+revno: 578
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Fri 2018-06-08 16:32:13 +0200
+message:
+  Fixed a mistake in the iosockets routine when using i-pi
+  
+  The sockets require a fixed string length.
+------------------------------------------------------------
+revno: 577
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Fri 2018-05-25 08:43:46 +0200
+message:
+  Fixed writing out too many wavefunctions
+  
+  In writewave users could specify wavefunction indices beyond
+  the number of eigenstates. This has now been fixed.
+  Any input from the user will be truncated to the maximum number
+  of eigenstates.
+------------------------------------------------------------
+revno: 576 [merge]
+committer: Alberto Garcia <albertog@icmab.es>
+branch nick: 4.0
+timestamp: Mon 2018-05-14 16:32:15 +0200
+message:
+  Diagnostics and behavior clarifications related to H and S folding
+  
+  *  Minimal fix for DM initialization with severe folding
+    
+    When an orbital interacts with its own periodic replicas and a
+    Gamma-point calculation is requested, the naive DM initialization with
+    atomic information is faulty: the diagonal S entries are no longer 1.0
+    (but are enhanced by the contributions from the replicas), so the
+    normalization of the DM is lost (the code will print a message to the
+    effect). The initial charge density will be distorted with respect to
+    its intended form (the result of a blanket normalization). Note that
+    the program might still go on to converge to the right ground state,
+    since the code to deal with multiple orbital interactions in the
+    Gamma-point case is mathematically correct.
+    
+    
+    There are several levels of fixes for this:
+    
+    1. Use k-point sampling, as it can be argued that requesting a
+    Gamma-point calculation for a very small cell is physically
+    meaningless.
+    
+    2. Force the use of an auxiliary supercell ('force-aux-cell
+    T'). Internally, the code will correctly place all the different
+    interactions in an expanded auxiliary supercell. The drawback is that
+    complex arithmetic and diagonalization must then be used (there is no
+    yet support in the code to avoid this).
+    
+    3. Correct the initialization of the DM so that its norm is conserved
+    and the initial charge density is more reasonable.
+    
+    In this patch we implement case 3. above by (always) dividing the
+    recently-initialized diagonal DM entries by the corresponding S entry.
+    Note that this is a zeroth-order correction, and the charge density
+    produced by the initial DM will exhibit a deficit at the orbital
+    position and 'ringing' enhancements at the superpositions of the
+    orbital and its periodic images. The initial scf steps will thus show
+    differences with a calculation done with 'force-aux-cell T', but
+    eventually they will converge to the same ground state.
+  
+    Updated the manual with an explanation of diagonal-folding and its
+    consequences.
+  
+  * Streamline hsparse. Kill the program if auxiliary supercell is inadequate
+    
+    The 'multiple-image' warnings in hsparse were not representative
+    enough under MPI operation (only the root node got to report
+    them). And it can be argued that they are superfluous except in a
+    'debug' mode of operation.  The key severe diagnostic is the existence
+    of 'folding' in a non-gamma calculation, which should lead to aborting
+    the program and to further investigation of the internals of the code.
+    In the gamma case, folding is reported and a further note is
+    printed if the user is attempting to carry out a COOP/COHP analysis (which
+    would be faulty in the presence of folding). 
+    
+    The non-documented 'debug-folding' feature is implemented very
+    coarsely for now.
+  
+    There is also a check for diagonal folding. Harris-functional calculations
+    are stopped if found.
+  
+    A number of tests used the combination of very small cells (leading
+    to 'diagonal folding') and Harris functional. The latter option has been
+    removed.
+    
+    Use 'message' interface for folding warnings.
+  
+    
+------------------------------------------------------------
+revno: 575 [merge]
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Mon 2018-05-07 14:07:29 +0200
+message:
+  Merged lp:~nickpapior/siesta/4.0-io-precision
+  
+  This extends the precision for the EIG, KP and PDOS output.
+------------------------------------------------------------
+revno: 574
+committer: Alberto Garcia <albertog@icmab.es>
+branch nick: 4.0
+timestamp: Thu 2018-04-26 15:04:08 +0200
+message:
+  Catch charge mismatchs in occupied states
+  
+  If the basis sets includes an orbital for a low-lying shell which was
+  not included in the pseudopotential generation, it could happen that
+  it is considered occupied, thus leading to a charge inconsistency.
+  
+  A check has bee introduced in the code to detect charge
+  inconsistencies. 
+------------------------------------------------------------
+revno: 573
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Wed 2018-04-25 13:14:24 +0200
+message:
+  Forgot to update Tests/Makefile with h2o NC calculation
+------------------------------------------------------------
+revno: 572
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Wed 2018-04-25 10:04:38 +0200
+message:
+  Fixed bands output for NC calculations
+  
+  For NC calculations the spin-components are mixed and thus
+  there are no separate eigenvalus. This fixes the output.
+  
+  gnubands had a bug when explicitly specifying a non-existing
+  spin-index.
+  
+  Added a bands test for NC.
+------------------------------------------------------------
+revno: 571
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Wed 2018-04-25 09:34:20 +0200
+message:
+  Fixed tests
+  
+  Now ag, batio and force_2 graphite_c6, graphite_vdw_df and pd_ice
+  has been fixed. They run without problems and does converge.
+  
+  Fixed the Makefile to add missing tests.
+  
+  Fixed gnubands code. The emin/emax reads from the .bands file.
+  The problem is that the emin/emax in the .bands file has a much
+  higher precision than the eigenvalues in the file. Thus one
+  could find values not in the correct range due to rounding
+  errors. This has been fixed by setting emin/emax to -1e30, 1e30.
+------------------------------------------------------------
+revno: 570
+committer: Alberto Garcia <albertog@icmab.es>
+branch nick: 4.0
+timestamp: Tue 2018-04-24 23:50:40 +0200
+message:
+  Add missing 'dictRef' attributes to some CML properties
+  
+  The missing attributes caused problems with the AiiDA parser.
+  As a matter of policy, all Siesta CML properties are required
+  to have a 'dictRef' attribute.
+  This is now enforced by the compiler after making the relevant
+  argument non-optional in our custom version of FoX.
+------------------------------------------------------------
+revno: 569
+committer: Alberto Garcia <albertog@icmab.es>
+branch nick: 4.0
+timestamp: Tue 2018-04-24 23:14:17 +0200
+message:
+  Mark Harris-functional calculations as 'converged'
+  
+  A Harris-functional calculation should be considered 'converged'
+  after a single iteration. Doing this explicitly avoids triggering
+  the standard warnings.
+------------------------------------------------------------
+revno: 568
+committer: Alberto Garcia <albertog@icmab.es>
+branch nick: 4.0
+timestamp: Tue 2018-04-24 23:02:34 +0200
+message:
+  Update gnubands in Util/Bands
+  
+  Rename new.gnubands.f90 to gnubands.f90 and update.
+  Rename the gnubands.f to old.gnubands.f
+------------------------------------------------------------
+revno: 567
+committer: Alberto Garcia <albertog@icmab.es>
+branch nick: 4.0
+timestamp: Tue 2018-04-24 10:40:31 +0200
+message:
+  Enlarge number fields in *_NOT_CONV messages. Document spin-in-scf
+------------------------------------------------------------
+revno: 566
+committer: Alberto Garcia <albertog@icmab.es>
+branch nick: 4.0
+timestamp: Tue 2018-04-17 12:16:15 +0200
+message:
+  Fix the computation of mulliken populations for non-collinear spin
+  
+  The populations were split in two contributions but one of them was not
+  properly added in all cases.
+------------------------------------------------------------
+revno: 565 [merge]
+author: Nick Papior <nickpapior@gmail.com>
+committer: Alberto Garcia <albertog@icmab.es>
+branch nick: 4.0
+timestamp: Sun 2018-04-15 00:37:19 +0200
+message:
+  Fix the Siesta response to an i-PI 'EXIT' message
+  
+  Siesta will now properly exit (by calling 'bye') when
+  receiving an 'EXIT' message from i-PI.
+------------------------------------------------------------
+revno: 564 [merge]
+committer: Alberto Garcia <albertog@icmab.es>
+branch nick: 4.0
+timestamp: Sat 2018-04-14 15:26:19 +0200
+message:
+  Remove time-reversal-symmetrization for non-collinear spin calculations
+  
+  While in principle TR symmetry (TRS) should be preserved in
+  non-collinear-spin calculations, care should be taken that some subtle
+  detail of the implementation does not break it.  The appearance of
+  spin-orbit-capable versions (>4.1) has tilted the balance towards
+  removing the TRS symmetrization (which is not possible with spin-orbit
+  coupling), forgoing the savings in the number of k-points in exchange
+  for uniformity of the analysis tools.
+  
+  ( + Use of the same convention for phase factors and the same
+  conjugation pattern in the building of the DM for the non-collinear
+  case as in the spin-orbit versions.)
+------------------------------------------------------------
+revno: 563
+committer: Alberto Garcia <albertog@icmab.es>
+branch nick: 4.0
+timestamp: Thu 2018-04-12 01:32:54 +0200
+message:
+  Fix mulliken populations for non-collinear spin in parallel
+  
+  For non-collinear spins, the mulliken routine was not parallelized
+  correctly.
+------------------------------------------------------------
+revno: 562 [merge]
+committer: Alberto Garcia <albertog@icmab.es>
+branch nick: 4.0
+timestamp: Wed 2018-04-11 11:52:01 +0200
+message:
+  Spin monitoring in scf cycle. Clarification of sign convention for DM
+    
+    *  Spin monitoring during scf cycle
+    
+    If the fdf variable 'Spin.In.Scf' is set to 'true', the size and
+    components of the (total) spin polarization will be printed at every
+    scf step.  This is analogous to the 'Mulliken.In.Scf' feature.
+    
+    The default for the Spin.In.SCF fdf flag is 'true' for calculations
+    involving spin.
+  
+    A single line of spin information is printed, prefixed by '  spin-moment:'.
+  
+    Note that now, for each scf step, the spin and/or mulliken analyses are
+    printed *after* the line showing the energies.
+  
+    The initial spin polarization for every geometry iteration is also
+    printed in 'state_init', replacing the similar calls in 'new_dm'.
+  
+    * Use explicitly the same DM_12 sign-convention as in SOC versions
+    
+    In the non-collinear case, the code is actually using internally the
+    same sign convention for the "up-down" components of H and the DM as
+    the spin-orbit-capable (SOC) versions (>= 4.1): The building of the
+    dense Hamiltonian has the same form and the off-diagonal components
+    of Vxc are identical. Routines diag2g and diag2k are actually using
+    the same convention, but with DM* as an intermediate step.
+    
+    By changing the interface to the outside world, namely the
+    correspondence between spin angles and the DM in new_dm, and the
+    calculation of the spin (actually moment) components in spnvec, the
+    code can now interoperate (i.e., reuse DMs) with the SOC versions.
+  
+    In order to reuse DM information produced by previous versions of
+    the program in the non-collinear case, the sign of D(4) of the old
+    DM has to be changed. This can be achieved with the
+    dm_noncol_sign_flip4 program in Util/DensityMatrix.
+    
+    
+------------------------------------------------------------
+revno: 561 [merge]
+committer: Alberto Garcia <albertog@icmab.es>
+branch nick: 4.0
+timestamp: Mon 2018-04-09 16:08:42 +0200
+message:
+  Make generation of timer report more robust. More information in CML
+  
+    * Generate timer report in non-convergence and out-of-time conditions
+    
+    For proper accounting, the timer information should be generated even
+    if the program stops due to non-convergence (scf, geometry) or
+    out-of-time conditions.
+    
+    This is achieved by inserting appropriate calls to 'timer' before the
+    call to 'die'.  To avoid a race condition in which a non-root node
+    might get to the 'die' call before the IO node has had time to
+    properly write the CML, timing, and even output information, a call to
+    'barrier' has been inserted before the 'die' call.
+    
+    It might be argued that this kind of bookeeping should be left to the
+    'die' call itself. But it is only possible if all nodes call 'die'.
+  
+    * Add no_u and nnz info to CML file to ease the extracting of
+      benchmarking information.
+------------------------------------------------------------
+revno: 560 [merge]
+committer: Alberto Garcia <albertog@icmab.es>
+branch nick: 4.0
+timestamp: Mon 2018-04-09 15:52:05 +0200
+message:
+  Enable compatibility switch for NRTAB value
+  
+  Internally the two-center integrals involved in some matrix element
+  calculations are tabulated with a preset number of elements (NRTAB). In
+  versions 4.0.1 and prior this was 128. Since 4.0.2 the number of table
+  elements has been increased to 1024, which translates to more accurate
+  matrix element calculations.
+  
+  If preservation of the (lower accuracy) numerical results of 4.0.1 or
+  prior versions is required for reproducibility purposes, the user can
+  include
+  
+        Compat.Matel.NRTAB  T
+  
+  in the fdf file.
+------------------------------------------------------------
+revno: 559
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Thu 2018-02-22 11:50:23 +0100
+message:
+  Removed unnecessary call in overlap.f to volume
+------------------------------------------------------------
+revno: 558 [merge]
+committer: Alberto Garcia <albertog@icmab.es>
+branch nick: 4.0
+timestamp: Tue 2018-02-20 22:01:24 +0100
+message:
+  Write JSON file for tree-timer information
+  
+  A more flexible output for timing information.
+  The 'time.json' file is produced if the option
+  
+    use-tree-timer  T
+  
+  is in effect.
+------------------------------------------------------------
+revno: 557
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Mon 2018-02-19 09:15:36 +0100
+message:
+  Increased NRTAB to 1024.
+  
+  Initial investigations shows that NRTAB in matel is important
+  for forces and possibly other quantities.
+  
+  I have added a notice in the compatibility.tex text which describes
+  what to do to revert the behaviour.
+------------------------------------------------------------
+revno: 556
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Mon 2018-02-12 20:45:14 +0100
+message:
+  Fixed Postnikovs fmpdos utility, fixes lp:1748937
+------------------------------------------------------------
+revno: 555
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Thu 2018-02-01 11:42:36 +0100
+message:
+  Added fermi-level to PDOS output
+  
+  By adding the fermi-level to the PDOS output we do not need
+  to read the fermi-level from elsewhere.
+  This makes analysis much easier.
+  
+  Also fixed a PDOS output bug for no_u > 9999.
+------------------------------------------------------------
+revno: 554
+fixes bug: https://launchpad.net/bugs/1746096
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Tue 2018-01-30 20:20:13 +0100
+message:
+  Removed all references to __FILE__ to enable conda-builds, fixes lp:1746096
+------------------------------------------------------------
+revno: 553
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Thu 2018-01-04 18:22:58 +0100
+message:
+  Possible bugfix for paralleloverk with k-grid in SCF, and Gamma in PDOS
+  
+  This is strictly not required in 4.0, but in the later versions this
+  is necessary.
+  This commit fixes the inconsistency of updating the "global" parallel-overk.
+------------------------------------------------------------
+revno: 552
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Thu 2018-01-04 15:38:24 +0100
+message:
+  Added a test for PDOS using the Gamma-only for kpoint calculations
+------------------------------------------------------------
+revno: 551
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Thu 2017-12-28 14:14:57 +0100
+message:
+  Fixed spin-polarized pdos.xml writing
+  
+  Wrong code in r550.
+------------------------------------------------------------
+revno: 550
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Thu 2017-12-28 14:00:52 +0100
+message:
+  Extended PDOS files with more metadata
+  
+  The PDOS xml output now also adds:
+  - Z: atomic number
+  - P: true/false for polarization orbital
+  
+  Also reduced temporary arrays and merged to loops.
+  
+  Renamed pdos.xml file to siesta.PDOS.xml to make it
+  system-label dependent.
+  
+  I have checked the utilities and there is no problems with
+  those.
+------------------------------------------------------------
+revno: 549
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Thu 2017-12-21 15:12:39 +0100
+message:
+  Increased length of int->str in wxml
+  
+  This fixes a potential problem when a very large
+  integer tries to get represented by the str_integer
+  routine in wxml. This simply increases the format to
+  allow a wider field.
+------------------------------------------------------------
+revno: 548
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Thu 2017-12-21 14:49:14 +0100
+message:
+  Final edits for read/write of floating orbitals
+  
+  Also fixed an inconsistency in the interpolation routine name.
+------------------------------------------------------------
+revno: 547
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Mon 2017-12-18 09:40:33 +0100
+message:
+  Fixed writing/reading ion.nc files for ghost-atoms
+  
+  Now siesta writes out ion.nc files for ghost-atoms, in these cases
+  will the number of projections be 0.
+  Secondly, a bug has been fixed when trying to read an ion.nc file
+  that was not present.
+  
+  This fixes lp:1738425
+------------------------------------------------------------
+revno: 546
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Fri 2017-12-15 11:24:23 +0100
+message:
+  Bug in writing a Bessel function ion/ion.xml file
+  
+  Since the Bessel basis does not contain any pseudo-potential siesta
+  would write binary stuff in the ion/ion.xml files which was preventing
+  it from being read elsewhere.
+  I have added a pseudo-potential initializer which defaults lots of
+  values to the pseudo-potential (could be necessary for Bessel and other
+  exotic pseudos.
+  
+  Also ensured lots of type arrays to be nullified upon creation, which
+  should help in the aid when debugging.
+------------------------------------------------------------
+revno: 545
+fixes bug: https://launchpad.net/bugs/1736455
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Tue 2017-12-05 16:13:23 +0100
+message:
+  Bug re-read basis functions with no potentials to interpolate (fix lp:1736455)
+  
+  When re-reading a basis from a ghost or Bessel orbital then many of the
+  quantities are 0 (Vna, VCore, etc.).
+  Since 4.0 the interpolation routine prevented these from the spline interpolation
+  because there is a check for monotonic arrays (all 0).
+  
+  This commit fixes this by simply checking for erroneous input, and if so it will
+  set dy2/dx2 to 0.
+  This is rather arbitrary but at least initializes the dy2/dx2 to some values.
+  
+  Secondly, a possible memory leak in interpolation is corrected by issuing
+  a fixed clean_spline call.
+------------------------------------------------------------
+revno: 544 [merge]
+fixes bug: https://launchpad.net/bugs/1728281
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Mon 2017-10-30 16:57:51 +0100
+message:
+  Merged fix lp:1728281
+------------------------------------------------------------
+revno: 543
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Wed 2017-10-18 18:14:45 +0200
+message:
+  Added compiler version information
+  
+  Now the Makefile will automatically add the relevant compiler
+  information such that one can more easily determine
+  the compiler version used.
+------------------------------------------------------------
+revno: 542
+fixes bug: https://launchpad.net/bugs/1721479
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Thu 2017-10-05 12:01:03 +0200
+message:
+  Fixed monkhorst-pack displacement, lp:1721479
+  
+  This fixes an uncommon bug where the displacement was
+  more than 1.
+  Now all displacements are translated into the principal
+  BZ.
+  
+  I have tested this by running h_chain with 0.5/7 and 1.5/7 with
+  exactly the same results.
+------------------------------------------------------------
+revno: 541 [merge]
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Wed 2017-10-04 13:25:11 +0200
+message:
+  Lots of IO fixes, cleaned unnecessary close calls, and fixed alloc-report problems
+  
+  Many fixes regarding the IO nature in siesta. Completely removed all references
+  to the paste function (still present in Util folder, hence it currently remains)
+  which also removes the need for lots of "save" statements. The default
+  behaviour should be to re-create the file on every call. The overhead is negligeble.
+  
+  Fixed print-out in alloc-report when peaknode is not 0.
+  
+  Fixed lots of alloc-mismatch findings.
+------------------------------------------------------------
+revno: 540
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Wed 2017-09-27 11:48:02 +0200
+message:
+  Fixed close of lun when using Siesta as master
+  
+  There was a missing io_close when using Siesta as master.
+------------------------------------------------------------
+revno: 539
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Tue 2017-09-19 15:01:59 +0200
+message:
+  Added dipole correction tests, and fixed convergence issue in the same tests
+------------------------------------------------------------
+revno: 538 [merge]
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Thu 2017-09-07 13:51:48 +0200
+message:
+  Added new units for fdf compliance
+  
+  Now Ha and mHa are accepted units (for Hartree and milli-Hartree, respectively).
+  These were missing.
+  
+  Also the merge aids in the maintenance of the units and allows one to easily change the
+  units, if so desired. I.e. we will test whether adding more digits will change anything.
+------------------------------------------------------------
+revno: 537
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Thu 2017-09-07 11:23:41 +0200
+message:
+  Updated Util/README to reflect that vps* files has been removed
+------------------------------------------------------------
+revno: 536
+fixes bug: https://launchpad.net/bugs/1704370
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Mon 2017-09-04 13:10:16 +0200
+message:
+  Fixed possible heap allocatable arrays for intel compiler
+  
+  A sum call has been removed to prevent a seg-fault for heap allocated
+  temporaries.
+  
+  Fixes lp:1704370
+------------------------------------------------------------
+revno: 535
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Mon 2017-09-04 12:12:21 +0200
+message:
+  Removed vpsa2bin.f and vpsb2asc.f, they are part of ATOM
+  
+  Removed PS converters. They are part of ATOM distribution.
+------------------------------------------------------------
+revno: 534
+fixes bug: https://launchpad.net/bugs/1712319
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Tue 2017-08-22 16:58:06 +0200
+message:
+  Updated Util/README for missing entries and sorting, fixes lp:1712319
+  
+  Now the Util/README is sorted and the missing entries
+  are updated. It is still a relatively crude README.
+------------------------------------------------------------
+revno: 533
+fixes bug: https://launchpad.net/bugs/1712317
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Tue 2017-08-22 15:12:33 +0200
+message:
+  Updated some tests, partially fixes lp:1712317
+  
+  Added makefiles for:
+    Util/Contour
+    Util/Optical
+    Util/sies2arc
+  
+  to enable easier compilation of said utilities.
+  
+  Removed clean targets in the protoneb and simpletests in
+  siesta as subroutine utility.
+  
+  Readme files in above directories are also updated.
+  
+  In Optical a program called "input" has been changed to
+  optical_input to prevent name clashes.
+  
+  I haven't implemented the LINALG fix, but I think we should
+  encourage the use of external libraries for performance reasons.
+  Essentially the shipped sources for LA are highly *discouraged*.
+------------------------------------------------------------
+revno: 532
+fixes bug: https://launchpad.net/bugs/1711850
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Tue 2017-08-22 14:23:59 +0200
+message:
+  Fixed documentation for tests, fixes lp:1711850
+  
+  A mistake in the usage documentation of the Makefile for the
+  tests has been corrected.
+------------------------------------------------------------
+revno: 531
+fixes bug: https://launchpad.net/bugs/1708634
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Fri 2017-08-04 13:02:12 +0200
+message:
+  Fixed ioeig file for non-colinear spins, fixes lp:1708634
+  
+  Now the eigenvalues are considered as a single spin
+  configuration in cases were non-colinear is used.
+  This also means that band-indices are doubled due to the double
+  spin-configuration.
+------------------------------------------------------------
+revno: 530
+tags: v4.0.1
+committer: Nick Papior <nickpapior@gmail.com>
+branch nick: 4.0
+timestamp: Mon 2017-07-03 12:08:01 +0200
+message:
+  Fixed Makefiles for clean targets in Util directories
+  
+  Now the following utilities will clean everything when
+  issuing make clean in their build directories.
+  
+  - COOP
+  - SiestaSubroutine/ProtoNEB
+  - SiestaSubroutine/SimpleTest
+  - WFS
+------------------------------------------------------------
+Use --include-merged or -n0 to see merged revisions.

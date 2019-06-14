@@ -1,0 +1,7 @@
+BandLinesScale pi/a
+%block bandlines
+1 0.000 0.000 0.000 \Gamma
+151 1.000 0.577 0.000 M
+201 1.333 0.000 0.000 K
+351 0.000 0.000 0.000 \Gamma
+%endblock bandlines
